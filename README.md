@@ -1,5 +1,7 @@
 # kodak-frame-editor
 
+**[바로 쓰기 → kodak.dongq.dev](https://kodak.dongq.dev)** · [소개 페이지](https://blog.dongq.dev/kodak-frame-editor/)
+
 코닥 디지털 액자에 **이메일로 사진을 보내기 전에**, 브라우저에서 액자 화면 비율(16:10)에 맞춰
 미리 잘라주는 웹 도구.
 
