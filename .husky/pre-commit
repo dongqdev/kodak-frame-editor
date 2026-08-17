@@ -1,0 +1,30 @@
+set -e
+
+echo "==> 시크릿 유출 체크"
+# .env.example/.env.sample은 값이 빈 템플릿이라 커밋 대상이 맞다(레포에 계속 추적됨).
+# 그 둘만 빼고 나머지 .env 계열은 전부 막는다.
+if git diff --cached --name-only | grep -vE '(^|/)\.env\.(example|sample)$' | grep -qE '(^|/)\.env(\..*)?$'; then
+  echo "!! .env 계열 파일이 스테이징되어 있습니다 — 실제 자격증명을 커밋하려는 게 아니라면 git reset으로 빼세요."
+  exit 1
+fi
+# .env.example에 실수로 실제 값이 채워진 채 커밋되는 것도 막는다(공개 레포라 특히 중요).
+example_files=$(git diff --cached --name-only | grep -E '(^|/)\.env\.(example|sample)$' || true)
+if [ -n "$example_files" ]; then
+  if git diff --cached -- $example_files \
+    | grep -E '^\+(SENDER_PASSWORD|R2_SECRET_ACCESS_KEY|R2_ACCESS_KEY_ID|FRAME_EMAIL)=.+'; then
+    echo "!! .env.example에 값이 채워져 있습니다 — 템플릿은 '키=' 형태로 비워두세요."
+    exit 1
+  fi
+fi
+if git diff --cached | grep -qE 'sk-ant-[A-Za-z0-9_-]{10,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----'; then
+  echo "!! diff에서 알려진 비밀키 패턴이 감지됐습니다. 실수로 자격증명을 커밋하려는 건 아닌지 확인하세요."
+  exit 1
+fi
+
+echo "==> 포매팅 (lint-staged)"
+npx lint-staged
+
+echo "==> 구문 체크 (스테이징된 .js 파일)"
+for f in $(git diff --cached --name-only --diff-filter=ACM -- '*.js'); do
+  [ -f "$f" ] && node --check "$f"
+done

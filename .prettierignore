@@ -1,0 +1,18 @@
+# 새 프로젝트 시작용 기본 .prettierignore (sap-harness 것에서 SAP 전용 경로를 뺀 범용 버전).
+# 프로젝트마다 있는 특이 경로(생성된 코드, 고정 바이트를 보존해야 하는 픽스처 등)는
+# 프로젝트에서 직접 추가할 것.
+
+# Tool-managed local state (never committed)
+.claude/settings.local.json
+
+# Generated build & spec artifacts
+gen/
+dist/
+build/
+.cache/
+node_modules/
+package-lock.json
+pnpm-lock.yaml
+
+# Git worktrees — 병렬 작업 중인 worktree 체크아웃까지 같이 검사 대상이 되는 걸 방지
+.claude/worktrees/

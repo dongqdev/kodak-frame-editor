@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <!-- maximum-scale로 확대를 막으면 저시력 사용자가 곤란해진다(접근성) — 확대 허용 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#14110f" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#faf7f3" media="(prefers-color-scheme: light)" />
+    <title>디지털액자 사진 보내기 — 코닥 액자용 사진 편집</title>
+    <meta
+      name="description"
+      content="코닥 디지털 액자로 사진을 메일 보내기 전에, 액자 화면 비율(16:10)에 맞춰 브라우저에서 미리 잘라주는 도구. 인생네컷 자동 배치, 여러 장 한 번에, HEIC 지원."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="디지털액자 사진 보내기" />
+    <meta
+      property="og:description"
+      content="코닥 액자에 보내기 전에 어디를 보여줄지 직접 정하세요. 인생네컷 자동 배치, 여러 장 한 번에, HEIC 지원."
+    />
+    <meta name="twitter:card" content="summary" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&family=Varela+Round&display=swap"
+    />
+    <link rel="stylesheet" href="/vendor/cropperjs/cropper.min.css" />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>디지털액자 사진 보내기</h1>
+      <p class="subtitle" id="subtitle">
+        액자 화면 비율(세로 10:16)에 맞춰 자르고, 확인 후 전송합니다.
+      </p>
+      <div class="mode-toggle" role="group" aria-label="액자 방향">
+        <button type="button" class="mode-btn active" data-mode="portrait" aria-pressed="true">
+          세로 (10:16)
+        </button>
+        <button type="button" class="mode-btn" data-mode="landscape" aria-pressed="false">
+          가로 (16:10)
+        </button>
+      </div>
+    </header>
+
+    <main id="step-select" class="step">
+      <p class="lede">
+        코닥 액자에 사진을 메일로 보내면 <strong>제멋대로 잘리거나 늘어나서</strong> 나오죠. 보내기
+        전에 어디를 보여줄지 직접 정하세요.
+      </p>
+
+      <label class="upload-box" for="file-input">
+        <span class="upload-icon" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="3" y="3" width="18" height="18" rx="3" />
+            <circle cx="8.5" cy="8.5" r="1.5" />
+            <path d="m21 15-4.5-4.5L7 20" />
+          </svg>
+        </span>
+        <span>사진 선택 (여러 장 가능)</span>
+        <span class="upload-hint">한 번에 최대 30장까지 · 아이폰 HEIC도 그대로</span>
+        <input id="file-input" type="file" accept="image/*,.heic,.heif" multiple />
+      </label>
+
+      <section class="landing-section" aria-labelledby="how-title">
+        <h2 id="how-title" class="landing-h2">쓰는 법</h2>
+        <ol class="steps">
+          <li>
+            <span class="step-num" aria-hidden="true">1</span>
+            <div>
+              <b>사진을 고른다</b>
+              <p>한 번에 30장까지. 아이폰 HEIC도 알아서 변환합니다.</p>
+            </div>
+          </li>
+          <li>
+            <span class="step-num" aria-hidden="true">2</span>
+            <div>
+              <b>보여줄 부분을 정한다</b>
+              <p>
+                드래그로 위치를 잡거나, 축소해서 남는 자리를 배경색으로 채웁니다. 배경색은 사진
+                가장자리에서 자동으로 뽑아드려요.
+              </p>
+            </div>
+          </li>
+          <li>
+            <span class="step-num" aria-hidden="true">3</span>
+            <div>
+              <b>액자 번호를 넣고 보낸다</b>
+              <p>장수가 많으면 알아서 여러 통으로 나눠 보냅니다.</p>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      <footer class="landing-footer">
+        <a href="https://github.com/dongqdev/kodak-frame-editor" rel="noopener"
+          >소스 코드 (GitHub)</a
+        >
+        <span aria-hidden="true">·</span>
+        <a href="https://dongqdev.github.io/kodak-frame-editor/">이 도구 소개 · 자세한 사용법</a>
+      </footer>
+    </main>
+
+    <main id="step-edit" class="step hidden">
+      <div
+        id="photo-count-status"
+        class="photo-count-status"
+        role="status"
+        aria-atomic="true"
+      ></div>
+      <div id="card-list" class="card-list"></div>
+      <label id="add-more-label" class="add-more" for="file-input-2">
+        + 사진 더 추가
+        <input id="file-input-2" type="file" accept="image/*,.heic,.heif" multiple />
+      </label>
+      <p id="add-more-limit-note" class="add-more-limit-note hidden"></p>
+      <button id="to-review-btn" class="primary-btn" disabled>미리보기로 이동</button>
+    </main>
+
+    <main id="step-review" class="step hidden">
+      <p id="review-summary" class="review-summary"></p>
+      <div id="review-grid" class="review-grid"></div>
+      <div class="frame-id-field">
+        <label class="frame-id-label" for="frame-id">보낼 액자 번호</label>
+        <div class="frame-id-input-row">
+          <input
+            id="frame-id"
+            type="text"
+            inputmode="numeric"
+            autocomplete="off"
+            placeholder="숫자만 입력"
+            aria-describedby="frame-id-help"
+          />
+          <span class="frame-id-suffix" aria-hidden="true">@mx1.kodakframes.com</span>
+        </div>
+        <p id="frame-id-help" class="frame-id-help">
+          액자에 설정된 이메일 주소의 <strong>@ 앞 숫자</strong>만 입력하세요. 한 번 입력하면
+          다음부터 자동으로 채워집니다.
+        </p>
+        <p id="frame-id-error" class="frame-id-error hidden" role="alert"></p>
+      </div>
+      <div class="review-actions">
+        <button id="back-to-edit-btn" class="secondary-btn">편집으로 돌아가기</button>
+        <button id="send-btn" class="primary-btn">액자로 전송</button>
+      </div>
+    </main>
+
+    <main id="step-done" class="step hidden">
+      <div id="done-message"></div>
+      <button id="restart-btn" class="primary-btn">새로 시작</button>
+    </main>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <div id="lightbox" class="lightbox hidden">
+      <button id="lightbox-close" type="button" class="lightbox-close" aria-label="닫기">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          aria-hidden="true"
+        >
+          <path d="M18 6 6 18M6 6l12 12" />
+        </svg>
+      </button>
+      <img id="lightbox-img" alt="확대 미리보기" />
+      <button id="lightbox-edit" type="button" class="lightbox-edit">이 사진 편집하기</button>
+    </div>
+
+    <script src="/vendor/cropperjs/cropper.min.js"></script>
+    <script src="/vendor/heic2any/heic2any.min.js"></script>
+    <script src="/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#14110f" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#faf7f3" media="(prefers-color-scheme: light)" />
+    <title>디지털액자 사진 보내기 — 코닥 액자용 사진 편집 도구</title>
+    <meta
+      name="description"
+      content="코닥 디지털 액자로 사진을 메일 보내기 전에, 액자 화면 비율(16:10)에 맞춰 브라우저에서 미리 잘라주는 무료 도구. 인생네컷 자동 배치, 여러 장 한 번에, 아이폰 HEIC 지원."
+    />
+    <link rel="canonical" href="https://kodak.dongq.dev/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="디지털액자 사진 보내기" />
+    <meta
+      property="og:description"
+      content="코닥 액자에 보내기 전에 어디를 보여줄지 직접 정하세요. 인생네컷 자동 배치, 여러 장 한 번에, HEIC 지원."
+    />
+    <meta name="twitter:card" content="summary" />
+    <!-- 파비콘은 외부 요청 없이 인라인 SVG로 (액자 + 사진 모티브) -->
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23f5a524'/%3E%3Crect x='7' y='9' width='18' height='14' rx='2.5' fill='none' stroke='%232a1c08' stroke-width='2'/%3E%3Ccircle cx='12.5' cy='14' r='1.6' fill='%232a1c08'/%3E%3Cpath d='M9 22l5-5 4 4 3-2.5 3 3.5' fill='none' stroke='%232a1c08' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&family=Varela+Round&display=swap"
+    />
+    <style>
+      /* 앱(public/style.css)과 같은 디자인 토큰. 이 페이지는 GitHub Pages에서
+         단독으로 뜨므로 외부 CSS 없이 전부 인라인으로 둔다. */
+      :root {
+        color-scheme: dark light;
+        --bg: #14110f;
+        --bg-elev: #1e1a17;
+        --card-bg: #221d19;
+        --border: rgba(255, 255, 255, 0.1);
+        --border-strong: rgba(255, 255, 255, 0.18);
+        --text: #f6f1ea;
+        --muted: #b8aa9c;
+        --faint: #8b7e72;
+        --accent: #f5a524;
+        --accent-hover: #ffb648;
+        --accent-text: #2a1c08;
+        --accent-soft: rgba(245, 165, 36, 0.14);
+        --danger: #ff6b5e;
+        --danger-soft: rgba(255, 107, 94, 0.14);
+        --s2: 8px;
+        --s3: 12px;
+        --s4: 16px;
+        --s5: 24px;
+        --s6: 32px;
+        --s7: 48px;
+        --r-sm: 8px;
+        --r-md: 12px;
+        --r-lg: 18px;
+        --r-pill: 999px;
+        --shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+        --ease: cubic-bezier(0.2, 0, 0.2, 1);
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #faf7f3;
+          --bg-elev: #ffffff;
+          --card-bg: #ffffff;
+          --border: rgba(38, 28, 20, 0.12);
+          --border-strong: rgba(38, 28, 20, 0.22);
+          --text: #241d16;
+          --muted: #6b5c4e;
+          --faint: #8d7f71;
+          --accent: #b35a09;
+          --accent-hover: #96490a;
+          --accent-text: #ffffff;
+          --accent-soft: rgba(179, 90, 9, 0.1);
+          --danger: #c62f22;
+          --danger-soft: rgba(198, 47, 34, 0.09);
+          --shadow: 0 4px 16px rgba(60, 40, 20, 0.1);
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        font-family:
+          'Nunito Sans',
+          -apple-system,
+          BlinkMacSystemFont,
+          'Pretendard',
+          'Apple SD Gothic Neo',
+          'Malgun Gothic',
+          sans-serif;
+        font-size: 16px;
+        line-height: 1.6;
+        background: var(--bg);
+        color: var(--text);
+        -webkit-font-smoothing: antialiased;
+      }
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+        border-radius: var(--r-sm);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          transition-duration: 0.01ms !important;
+          animation-duration: 0.01ms !important;
+        }
+      }
+      .wrap {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 0 var(--s4);
+      }
+
+      /* 히어로 */
+      .hero {
+        text-align: center;
+        padding: var(--s7) 0 var(--s6);
+        border-bottom: 1px solid var(--border);
+        background: linear-gradient(180deg, var(--bg-elev), var(--bg));
+      }
+      .hero h1 {
+        margin: 0 0 var(--s3);
+        font-family: 'Varela Round', 'Nunito Sans', sans-serif;
+        font-size: clamp(1.6rem, 6vw, 2.3rem);
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        text-wrap: balance;
+      }
+      .hero p {
+        margin: 0 auto var(--s5);
+        max-width: 46ch;
+        color: var(--muted);
+        font-size: 1.02rem;
+        text-wrap: balance;
+      }
+      .hero p strong {
+        color: var(--text);
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--s2);
+        min-height: 52px;
+        padding: 0 var(--s6);
+        border-radius: var(--r-md);
+        background: var(--accent);
+        color: var(--accent-text);
+        font-size: 1.02rem;
+        font-weight: 700;
+        text-decoration: none;
+        box-shadow: var(--shadow);
+        transition:
+          background 200ms var(--ease),
+          transform 120ms var(--ease);
+      }
+      .cta:hover {
+        background: var(--accent-hover);
+      }
+      .cta:active {
+        transform: scale(0.99);
+      }
+      .cta-note {
+        margin: var(--s3) 0 0;
+        color: var(--faint);
+        font-size: 0.85rem;
+      }
+
+      section {
+        margin-top: var(--s7);
+      }
+      h2 {
+        margin: 0 0 var(--s4);
+        font-family: 'Varela Round', 'Nunito Sans', sans-serif;
+        font-size: 1.15rem;
+        font-weight: 600;
+        text-align: center;
+      }
+      p.body {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+      p.body strong {
+        color: var(--text);
+      }
+      code {
+        padding: 2px 6px;
+        border-radius: 6px;
+        background: var(--bg-elev);
+        border: 1px solid var(--border);
+        font-size: 0.85em;
+        word-break: break-all;
+      }
+
+      /* 전/후 */
+      .compare {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--s4);
+      }
+      figure {
+        margin: 0;
+      }
+      .compare svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        border-radius: var(--r-sm);
+      }
+      .c-frame {
+        fill: none;
+        stroke: var(--border-strong);
+        stroke-width: 2;
+      }
+      .c-bad {
+        fill: color-mix(in srgb, var(--danger) 34%, var(--bg-elev));
+      }
+      .c-good {
+        fill: color-mix(in srgb, var(--accent) 34%, var(--bg-elev));
+      }
+      .c-person {
+        fill: color-mix(in srgb, var(--text) 72%, transparent);
+      }
+      figcaption {
+        margin-top: var(--s2);
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+      .tag {
+        display: inline-block;
+        margin-right: 4px;
+        padding: 1px 8px;
+        border-radius: var(--r-pill);
+        font-size: 0.72rem;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      .tag-bad {
+        background: var(--danger-soft);
+        color: var(--danger);
+      }
+      .tag-good {
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+
+      /* 단계 / 기능 카드 */
+      ol.steps,
+      ul.feats {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: var(--s3);
+      }
+      ol.steps li {
+        display: flex;
+        gap: var(--s3);
+      }
+      ol.steps li,
+      ul.feats li {
+        padding: var(--s4);
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--r-md);
+      }
+      .num {
+        flex: 0 0 auto;
+        display: grid;
+        place-items: center;
+        width: 28px;
+        height: 28px;
+        border-radius: var(--r-pill);
+        background: var(--accent);
+        color: var(--accent-text);
+        font-size: 0.85rem;
+        font-weight: 700;
+      }
+      b {
+        display: block;
+        font-size: 0.94rem;
+        margin-bottom: 2px;
+      }
+      li p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.87rem;
+      }
+      @media (min-width: 640px) {
+        ul.feats {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      .note {
+        margin: var(--s3) 0 0;
+        padding: var(--s3) var(--s4);
+        border-left: 3px solid var(--accent);
+        border-radius: 0 var(--r-sm) var(--r-sm) 0;
+        background: var(--accent-soft);
+        color: var(--muted);
+        font-size: 0.87rem;
+      }
+
+      .closing {
+        margin-top: var(--s7);
+        padding: var(--s6) var(--s4);
+        text-align: center;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--r-lg);
+      }
+      .closing h2 {
+        margin-bottom: var(--s4);
+      }
+
+      footer {
+        margin-top: var(--s7);
+        padding: var(--s5) 0 var(--s6);
+        border-top: 1px solid var(--border);
+        text-align: center;
+        color: var(--faint);
+        font-size: 0.84rem;
+      }
+      footer a {
+        display: inline-flex;
+        align-items: center;
+        /* WCAG 2.2 최소 타깃 24px 확보 */
+        min-height: 24px;
+        padding: 4px 2px;
+        color: var(--muted);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      footer a:hover {
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <header class="hero">
+      <div class="wrap">
+        <h1>디지털액자 사진 보내기</h1>
+        <p>
+          코닥 액자에 사진을 메일로 보내면 <strong>제멋대로 잘리거나 늘어나서</strong> 나오죠.
+          보내기 전에 어디를 보여줄지 직접 정하세요.
+        </p>
+        <a class="cta" href="https://kodak.dongq.dev/">사진 편집하러 가기</a>
+        <p class="cta-note">설치·가입 없이 브라우저에서 바로 · 무료</p>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section aria-labelledby="ba">
+        <h2 id="ba">뭐가 달라지나요</h2>
+        <div class="compare">
+          <figure>
+            <svg
+              viewBox="0 0 160 100"
+              role="img"
+              aria-label="보정 전: 인물의 머리가 액자 위쪽에서 잘려나간 모습"
+            >
+              <clipPath id="cb"><rect x="1" y="1" width="158" height="98" rx="6" /></clipPath>
+              <g clip-path="url(#cb)">
+                <rect class="c-bad" x="1" y="1" width="158" height="98" />
+                <!-- 머리가 액자 위쪽 밖으로 나가 잘린 상태 -->
+                <circle class="c-person" cx="80" cy="4" r="22" />
+                <path class="c-person" d="M40 100c0-23 18-41 40-41s40 18 40 41z" />
+              </g>
+              <rect class="c-frame" x="1" y="1" width="158" height="98" rx="6" />
+            </svg>
+            <figcaption>
+              <span class="tag tag-bad">그냥 보내면</span> 얼굴이 잘리거나 늘어남
+            </figcaption>
+          </figure>
+          <figure>
+            <svg
+              viewBox="0 0 160 100"
+              role="img"
+              aria-label="보정 후: 인물이 액자 안에 온전히 들어온 모습"
+            >
+              <clipPath id="ca"><rect x="1" y="1" width="158" height="98" rx="6" /></clipPath>
+              <g clip-path="url(#ca)">
+                <rect class="c-good" x="1" y="1" width="158" height="98" />
+                <circle class="c-person" cx="80" cy="38" r="17" />
+                <path class="c-person" d="M48 100c0-19 14-33 32-33s32 14 32 33z" />
+              </g>
+              <rect class="c-frame" x="1" y="1" width="158" height="98" rx="6" />
+            </svg>
+            <figcaption>
+              <span class="tag tag-good">이 도구로</span> 보여줄 곳을 직접 고름
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section aria-labelledby="how">
+        <h2 id="how">쓰는 법</h2>
+        <ol class="steps">
+          <li>
+            <span class="num" aria-hidden="true">1</span>
+            <div>
+              <b>사진을 고른다</b>
+              <p>한 번에 30장까지. 아이폰 HEIC도 알아서 변환합니다.</p>
+            </div>
+          </li>
+          <li>
+            <span class="num" aria-hidden="true">2</span>
+            <div>
+              <b>보여줄 부분을 정한다</b>
+              <p>
+                드래그로 위치를 잡거나, 축소해서 남는 자리를 배경색으로 채웁니다. 배경색은 사진
+                가장자리에서 자동으로 뽑아드려요.
+              </p>
+            </div>
+          </li>
+          <li>
+            <span class="num" aria-hidden="true">3</span>
+            <div>
+              <b>액자 번호를 넣고 보낸다</b>
+              <p>장수가 많으면 알아서 여러 통으로 나눠 보냅니다.</p>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      <section aria-labelledby="feat">
+        <h2 id="feat">이런 것도 해줍니다</h2>
+        <ul class="feats">
+          <li>
+            <b>인생네컷 자동 처리</b>
+            <p>
+              좁고 긴 사진은 자동으로 알아채서, 자르지 않고 통째로 좌우에 나란히(오른쪽은 거울)
+              배치합니다.
+            </p>
+          </li>
+          <li>
+            <b>액자 해상도에 맞춰 전송</b>
+            <p>액자가 알아서 줄이게 두지 않고 미리 고품질로 맞춰 보내서 더 선명합니다.</p>
+          </li>
+          <li>
+            <b>세로·가로 둘 다</b>
+            <p>액자를 눕혀 쓰든 세워 쓰든 토글 하나로 바꿉니다.</p>
+          </li>
+          <li>
+            <b>사진은 브라우저 밖으로 안 나감</b>
+            <p>자르는 작업은 전부 기기 안에서 끝나고, 완성된 결과물만 액자로 보냅니다.</p>
+          </li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="num">
+        <h2 id="num">액자 번호가 뭔가요</h2>
+        <p class="body">
+          코닥 액자는 <code>숫자@mx1.kodakframes.com</code> 주소로 메일을 받으면 사진이 올라갑니다.
+          액자 설정 화면(또는 KODAK Classic Frame 앱)에서 그 주소를 확인할 수 있어요. 이 도구에는
+          <strong>@ 앞 숫자만</strong> 넣으면 됩니다.
+        </p>
+        <p class="note">
+          받는 주소를 통째로 입력받지 않는 건 일부러 그런 겁니다 — 그래야 코닥 액자 외의 주소로는
+          보낼 수 없어서, 이 도구가 스팸 발송에 악용될 여지가 없습니다.
+        </p>
+      </section>
+
+      <div class="closing">
+        <h2>같은 액자 쓰시면 그냥 쓰세요</h2>
+        <p class="body" style="margin-bottom: var(--s5)">
+          집에 있는 코닥 액자에 사진을 보내다 답답해서 직접 만들어 쓰고 있는 도구입니다. 코드도 전부
+          공개돼 있으니 직접 띄워 쓰셔도 됩니다.
+        </p>
+        <a class="cta" href="https://kodak.dongq.dev/">사진 편집하러 가기</a>
+      </div>
+    </main>
+
+    <footer>
+      <div class="wrap">
+        <a href="https://github.com/dongqdev/kodak-frame-editor">소스 코드 (GitHub)</a> · MIT
+        라이선스
+      </div>
+    </footer>
+  </body>
+</html>
